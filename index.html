@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click.it Ayushi | Premium Nature Photography</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/ScrollToPlugin.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --secondary: #f59e0b;
+            --accent: #3b82f6;
+        }
+        .font-playfair { font-family: 'Playfair Display', serif; }
+        .font-poppins { font-family: 'Poppins', sans-serif; }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .photo-item {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .photo-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .photo-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .photo-item:hover::before {
+            opacity: 1;
+        }
+        .photo-item .photo-details {
+            position: absolute;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem;
+            color: white;
+            transition: bottom 0.3s ease;
+        }
+        .photo-item:hover .photo-details {
+            bottom: 0;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hero-section {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%);
+        }
+        .nav-link {
+            position: relative;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        .active-nav::after {
+            width: 100%;
+        }
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary) 0%, var(--primary-dark) 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+        }
+        .btn-secondary {
+            background: linear-gradient(to right, var(--secondary) 0%, #e67e22 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
+        }
+        .btn-accent {
+            background: linear-gradient(to right, var(--accent) 0%, #2563eb 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+        }
+        .parallax-bg {
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+        .category-btn {
+            transition: all 0.3s ease;
+        }
+        .category-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+        }
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .lightbox.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+        .lightbox img {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            background: rgba(255,255,255,0.2);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .lightbox-prev {
+            left: 20px;
+        }
+        .lightbox-next {
+            right: 20px;
+        }
+        .lightbox-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 1rem;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        .lightbox.active .lightbox-info {
+            transform: translateY(0);
+        }
+        .workshop-card {
+            transition: all 0.3s ease;
+            perspective: 1000px;
+        }
+        .workshop-card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .workshop-card:hover .workshop-card-inner {
+            transform: rotateY(10deg);
+        }
+        .purchase-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .purchase-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255,255,255,0.1);
+            transform: rotate(45deg);
+            transition: all 0.6s ease;
+        }
+        .purchase-btn:hover::after {
+            left: 100%;
+        }
+        .stats-counter {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .floating-element {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .watermark {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8rem;
+            pointer-events: none;
+        }
+        .feature-card {
+            transition: all 0.3s ease;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .feature-icon.primary {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--primary);
+        }
+        .feature-icon.secondary {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--secondary);
+        }
+        .feature-icon.accent {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+        }
+        .blog-card {
+            transition: all 0.3s ease;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .blog-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .blog-card img {
+            transition: transform 0.5s ease;
+        }
+        .blog-card:hover img {
+            transform: scale(1.05);
+        }
+        .testimonial-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .testimonial-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .testimonial-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .instagram-feed {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .instagram-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            aspect-ratio: 1/1;
+        }
+        .instagram-item img {
+            transition: transform 0.5s ease;
+        }
+        .instagram-item:hover img {
+            transform: scale(1.1);
+        }
+        .instagram-item::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .instagram-item:hover::after {
+            opacity: 1;
+        }
+        .instagram-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 2;
+        }
+        .instagram-item:hover .instagram-icon {
+            opacity: 1;
+        }
+        .price-card {
+            transition: all 0.3s ease;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .price-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .price-card.popular {
+            border: 2px solid var(--primary);
+            position: relative;
+        }
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 0.25rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .price-feature {
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        .price-feature::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.5rem;
+            width: 0.75rem;
+            height: 0.75rem;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310b981'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z'/%3E%3C/svg%3E") no-repeat center;
+        }
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .back-to-top:hover {
+            background: var(--primary-dark);
+            transform: translateY(-3px);
+        }
+        .cart-preview {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 350px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+        .cart-preview.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .cart-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+        .cart-item-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-right: 1rem;
+        }
+        .cart-item-remove {
+            margin-left: auto;
+            color: #ef4444;
+            cursor: pointer;
+        }
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        .preloader-logo {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .preloader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            opacity: 0;
+        }
+        .section-title {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 2rem;
+        }
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--primary);
+        }
+        .section-title.center::after {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .parallax-section {
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            position: relative;
+        }
+        .parallax-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+        }
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 */
+            height: 0;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .accordion-item {
+            border-bottom: 1px solid #eee;
+            overflow: hidden;
+        }
+        .accordion-header {
+            padding: 1.5rem 0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .accordion-item.active .accordion-content {
+            max-height: 500px;
+        }
+        .accordion-icon {
+            transition: transform 0.3s ease;
+        }
+        .accordion-item.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-poppins text-gray-700">
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="font-playfair text-2xl font-bold text-gray-800 flex items-center preloader-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span>Click.it Ayushi</span>
+        </div>
+        <div class="preloader-spinner"></div>
+    </div>
+
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="bg-white/90 backdrop-blur-md shadow-sm fixed w-full z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-20">
+                    <div class="flex items-center">
+                        <div class="font-playfair text-2xl font-bold text-gray-800 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            <span>Click.it Ayushi</span>
+                        </div>
+                    </div>
+                    <div class="hidden md:flex space-x-8">
+                        <a href="#home" class="nav-link text-gray-700 hover:text-emerald-600 font-medium" :class="{'active-nav text-emerald-600': activeSection === 'home'}">Home</a>
+                        <a href="#gallery" class="nav-link text-gray-700 hover:text-emerald-600 font-medium" :class="{'active-nav text-emerald-600': activeSection === 'gallery'}">Gallery</a>
+                        <a href="#workshops" class="nav-link text-gray-700 hover:text-emerald-600 font-medium" :class="{'active-nav text-emerald-600': activeSection === 'workshops'}">Workshops</a>
+                        <a href="#about" class="nav-link text-gray-700 hover:text-emerald-600 font-medium" :class="{'active-nav text-emerald-600': activeSection === 'about'}">About</a>
+                        <a href="#blog" class="nav-link text-gray-700 hover:text-emerald-600 font-medium" :class="{'active-nav text-emerald-600': activeSection === 'blog'}">Blog</a>
+                        <a href="#contact" class="nav-link text-gray-700 hover:text-emerald-600 font-medium" :class="{'active-nav text-emerald-600': activeSection === 'contact'}">Contact</a>
+                        <a href="#" class="nav-link text-gray-700 hover:text-emerald-600 font-medium flex items-center relative" @click.prevent="toggleCartPreview">
+                            <i class="bi bi-cart3 mr-1"></i> Cart <span v-if="cartCount > 0" class="ml-1 bg-emerald-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ cartCount }}</span>
+                        </a>
+                    </div>
+                    <button @click="toggleMobileMenu" class="md:hidden text-gray-700 focus:outline-none">
+                        <i class="bi text-2xl" :class="mobileMenuOpen ? 'bi-x' : 'bi-list'"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Mobile Menu -->
+            <div v-if="mobileMenuOpen" class="md:hidden bg-white shadow-lg">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <a href="#home" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100" @click="mobileMenuOpen = false">Home</a>
+                    <a href="#gallery" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100" @click="mobileMenuOpen = false">Gallery</a>
+                    <a href="#workshops" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100" @click="mobileMenuOpen = false">Workshops</a>
+                    <a href="#about" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100" @click="mobileMenuOpen = false">About</a>
+                    <a href="#blog" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100" @click="mobileMenuOpen = false">Blog</a>
+                    <a href="#contact" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100" @click="mobileMenuOpen = false">Contact</a>
+                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 flex items-center" @click="mobileMenuOpen = false; toggleCartPreview()">
+                        <i class="bi bi-cart3 mr-2"></i> Cart <span v-if="cartCount > 0" class="ml-auto bg-emerald-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ cartCount }}</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Cart Preview -->
+        <div class="cart-preview" :class="{'active': cartPreviewOpen}">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg">Your Cart ({{ cartCount }})</h3>
+                <button @click="toggleCartPreview" class="text-gray-500 hover:text-gray-700">
+                    <i class="bi bi-x text-xl"></i>
+                </button>
+            </div>
+            <div v-if="cartItems.length > 0">
+                <div v-for="item in cartItems" :key="item.id" class="cart-item">
+                    <div class="cart-item-img">
+                        <img :src="item.image" :alt="item.title" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-800">{{ item.title }}</h4>
+                        <p class="text-sm text-gray-600">₹{{ item.price.toLocaleString() }}</p>
+                    </div>
+                    <button @click="removeFromCart(item.id)" class="cart-item-remove">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex justify-between mb-4">
+                        <span class="font-medium">Total:</span>
+                        <span class="font-bold">₹{{ cartTotal.toLocaleString() }}</span>
+                    </div>
+                    <button class="w-full btn-primary text-white py-2 rounded-lg font-medium">
+                        Proceed to Checkout
+                    </button>
+                </div>
+            </div>
+            <div v-else class="py-8 text-center">
+                <i class="bi bi-cart-x text-4xl text-gray-400 mb-2"></i>
+                <p class="text-gray-600">Your cart is empty</p>
+                <button @click="scrollToGallery" class="mt-4 text-emerald-600 hover:text-emerald-700 font-medium">
+                    Browse Gallery
+                </button>
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <header id="home" class="pt-32 pb-20 px-4 hero-section">
+            <div class="max-w-7xl mx-auto">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="text-center md:text-left">
+                        <h1 class="font-playfair text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-gray-800 leading-tight">
+                            Capturing Nature's <span class="text-emerald-600">Timeless</span> Beauty
+                        </h1>
+                        <p class="text-lg text-gray-600 mb-8 max-w-lg">
+                            Hi, I'm Ayushi - award-winning nature photographer and educator. Through Click.it Ayushi, I bring you the world's most stunning landscapes and wildlife moments, preserving nature's magic one frame at a time.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                            <button @click="scrollToGallery" class="btn-primary text-white px-8 py-3 rounded-lg font-medium">
+                                Explore Gallery
+                            </button>
+                            <button @click="scrollToWorkshops" class="bg-white text-gray-800 border border-gray-300 px-8 py-3 rounded-lg font-medium hover:bg-gray-50 transition duration-300">
+                                Book a Workshop
+                            </button>
+                        </div>
+                        <div class="mt-12 flex items-center justify-center md:justify-start space-x-6">
+                            <div class="flex items-center">
+                                <div class="bg-emerald-100 p-3 rounded-full mr-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-gray-800"><span class="stats-counter" ref="yearsCounter">0</span>+ Years</p>
+                                    <p class="text-sm text-gray-600">Professional Experience</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="bg-amber-100 p-3 rounded-full mr-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-gray-800"><span class="stats-counter" ref="publishedCounter">0</span>+</p>
+                                    <p class="text-sm text-gray-600">Published Works</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative hidden md:block">
+                        <div class="relative w-full h-96 rounded-2xl overflow-hidden shadow-xl floating-element">
+                            <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05" alt="Mountain landscape" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            <div class="absolute bottom-0 left-0 p-6 text-white">
+                                <p class="text-sm font-medium">Featured Work</p>
+                                <h3 class="font-playfair text-2xl font-bold">Himalayan Sunrise</h3>
+                                <div class="watermark">© Click.it Ayushi</div>
+                            </div>
+                        </div>
+                        <div class="absolute -bottom-6 -left-6 w-40 h-40 rounded-2xl overflow-hidden shadow-lg border-4 border-white floating-element" style="animation-delay: 0.5s;">
+                            <img src="https://images.unsplash.com/photo-1501854140801-50d01698950b" alt="Forest path" class="w-full h-full object-cover">
+                            <div class="watermark">© Click.it Ayushi</div>
+                        </div>
+                        <div class="absolute -top-6 -right-6 w-48 h-48 rounded-2xl overflow-hidden shadow-lg border-4 border-white floating-element" style="animation-delay: 1s;">
+                            <img src="https://images.unsplash.com/photo-1447752875215-b2761acb3c5d" alt="Waterfall" class="w-full h-full object-cover">
+                            <div class="watermark">© Click.it Ayushi</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Features Section -->
+        <section class="py-20 px-4 bg-white">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16">
+                    <span class="inline-block px-3 py-1 text-sm font-medium text-emerald-600 bg-emerald-100 rounded-full mb-4">Why Choose Me</span>
+                    <h2 class="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-6">Premium Photography Experience</h2>
+                    <p class="max-w-2xl mx-auto text-gray-600">From breathtaking landscapes to intimate wildlife moments, I deliver exceptional quality and artistic vision.</p>
+                </div>
+                
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="feature-card p-8 text-center">
+                        <div class="feature-icon primary mx-auto">
+                            <i class="bi bi-camera text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-xl text-gray-800 mb-3">Award-Winning Quality</h3>
+                        <p class="text-gray-600">Recognized by National Geographic and Wildlife Photographer of the Year for exceptional nature photography.</p>
+                    </div>
+                    <div class="feature-card p-8 text-center">
+                        <div class="feature-icon secondary mx-auto">
+                            <i class="bi bi-globe text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-xl text-gray-800 mb-3">Global Perspectives</h3>
+                        <p class="text-gray-600">Photographs captured across 5 continents, showcasing diverse ecosystems and natural wonders.</p>
+                    </div>
+                    <div class="feature-card p-8 text-center">
+                        <div class="feature-icon accent mx-auto">
+                            <i class="bi bi-heart text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-xl text-gray-800 mb-3">Conservation Focus</h3>
+                        <p class="text-gray-600">10% of all proceeds support wildlife conservation efforts and environmental organizations.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gallery Section -->
+        <section id="gallery" class="py-20 px-4 bg-gray-50">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16">
+                    <span class="inline-block px-3 py-1 text-sm font-medium text-emerald-600 bg-emerald-100 rounded-full mb-4">Gallery</span>
+                    <h2 class="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-4">Nature's Masterpieces</h2>
+                    <p class="max-w-2xl mx-auto text-gray-600">A curated collection of my finest nature photography from around the world. Limited edition prints available.</p>
+                </div>
+                
+                <!-- Categories -->
+                <div class="flex flex-wrap justify-center gap-3 mb-12">
+                    <button 
+                        v-for="category in categories" 
+                        :key="category"
+                        @click="filterCategory(category)"
+                        :class="['category-btn px-5 py-2 rounded-full font-medium transition duration-300 bg-white shadow-sm hover:bg-gray-100',
+                                selectedCategory === category ? 'active' : '']">
+                        {{ category }}
+                    </button>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div v-if="loading" class="flex justify-center items-center h-64">
+                    <div class="loading-spinner"></div>
+                </div>
+
+                <!-- Photo Grid -->
+                <div v-else class="photo-grid">
+                    <div v-for="(photo, index) in filteredPhotos" :key="photo.id" class="photo-item" @click="openLightbox(index)">
+                        <img :src="photo.url" :alt="photo.title" class="w-full h-80 object-cover">
+                        <div class="photo-details">
+                            <h3 class="font-playfair text-xl font-bold">{{ photo.title }}</h3>
+                            <p class="text-sm opacity-90">{{ photo.location }}</p>
+                            <div class="mt-2 flex items-center">
+                                <span class="inline-block px-2 py-1 text-xs font-medium bg-white/20 rounded-full">{{ photo.category }}</span>
+                                <span class="ml-2 text-xs opacity-80">{{ photo.date }}</span>
+                            </div>
+                            <div class="mt-3 flex justify-between items-center">
+                                <span class="text-emerald-300 font-medium">₹{{ photo.price.toLocaleString() }}</span>
+                                <button @click.stop="addToCart(photo)" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition duration-300">
+                                    <i class="bi bi-cart-plus mr-1"></i> Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                        <div class="watermark">© Click.it Ayushi</div>
+                    </div>
+                </div>
+
+                <div class="mt-12 text-center">
+                    <button @click="loadMorePhotos" class="bg-white text-emerald-600 border border-emerald-600 px-8 py-3 rounded-lg font-medium hover:bg-emerald-50 transition duration-300">
+                        Load More
+                        <i class="bi bi-arrow-down ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Parallax Section -->
+        <section class="parallax-section py-32 px-4 text-white" style="background-image: url('https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07');">
+            <div class="max-w-4xl mx-auto text-center relative">
+                <h2 class="font-playfair text-4xl md:text-5xl font-bold mb-6">"In nature, light creates the color. In photography, color creates the light."</h2>
+                <p class="text-xl mb-8">- Ayushi, Founder of Click.it Ayushi</p>
+                <button @click="scrollToWorkshops" class="btn-secondary text-white px-8 py-3 rounded-lg font-medium">
+                    Join My Next Workshop
+                </button>
+            </div>
+        </section>
+
+        <!-- Workshops Section -->
+        <section id="workshops" class="py-20 px-4 bg-white">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16">
+                    <span class="inline-block px-3 py-1 text-sm font-medium text-emerald-600 bg-emerald-100 rounded-full mb-4">Workshops</span>
+                    <h2 class="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-4">Photography Workshops</h2>
+                    <p class="max-w-2xl mx-auto text-gray-600">Join me for immersive photography experiences in some of the world's most beautiful locations. Limited spots available.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div v-for="workshop in displayedWorkshops" :key="workshop.id" class="workshop-card">
+                        <div class="workshop-card-inner bg-white rounded-xl shadow-lg overflow-hidden h-full flex flex-col">
+                            <div class="relative h-48 overflow-hidden">
+                                <img :src="workshop.image" :alt="workshop.title" class="w-full h-full object-cover">
+                                <div class="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-medium">
+                                    {{ workshop.duration }}
+                                </div>
+                            </div>
+                            <div class="p-6 flex-grow">
+                                <h3 class="font-playfair text-xl font-bold text-gray-800 mb-2">{{ workshop.title }}</h3>
+                                <p class="text-gray-600 mb-4">{{ workshop.description }}</p>
+                                <div class="flex items-center text-sm text-gray-500 mb-4">
+                                    <i class="bi bi-geo-alt mr-2"></i>
+                                    <span>{{ workshop.location }}</span>
+                                </div>
+                                <div class="flex items-center text-sm text-gray-500 mb-4">
+                                    <i class="bi bi-calendar-event mr-2"></i>
+                                    <span>{{ workshop.date }}</span>
+                                </div>
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <i class="bi bi-people mr-2"></i>
+                                    <span>Group size: {{ workshop.groupSize }} photographers</span>
+                                </div>
+                            </div>
+                            <div class="px-6 pb-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="text-emerald-600 font-bold text-lg">₹{{ workshop.price.toLocaleString() }}</span>
+                                    <span class="text-sm" :class="workshop.seats <= 3 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'" class="px-2 py-1 rounded">
+                                        {{ workshop.seats }} seats left
+                                    </span>
+                                </div>
+                                <button @click="addWorkshopToCart(workshop)" class="purchase-btn w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium transition duration-300">
+                                    Book Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-12 text-center">
+                    <button @click="showAllWorkshops = !showAllWorkshops" class="bg-white text-emerald-600 border border-emerald-600 px-8 py-3 rounded-lg font-medium hover:bg-emerald-50 transition duration-300">
+                        {{ showAllWorkshops ? 'Show Less' : 'View All Workshops' }}
+                        <i class="bi ml-2" :class="showAllWorkshops ? 'bi-arrow-up' : 'bi-arrow-down'"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Video Section -->
+        <section class="py-20 px-4 bg-gray-50">
+            <div class="max-w-7xl mx-auto">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <span class="inline-block px-3 py-1 text-sm font-medium text-emerald-600 bg-emerald-100 rounded-full mb-4">Behind the Lens</span>
+                        <h2 class="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-6">My Creative Process</h2>
+                        <p class="text-gray-600 mb-6">
+                            Discover what goes into creating these breathtaking nature photographs. From scouting locations at dawn to patiently waiting for the perfect light, my process combines technical skill with artistic vision.
+                        </p>
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="bg-emerald-100 p-3 rounded-full mr-4 flex-shrink-0">
+                                    <i class="bi bi-camera text-emerald-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-800">Technical Mastery</h4>
+                                    <p class="text-gray-600">Learn about the camera settings and techniques I use to capture nature's beauty.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="bg-amber-100 p-3 rounded-full mr-4 flex-shrink-0">
+                                    <i class="bi bi-lightbulb text-amber-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-800">Artistic Vision</h4>
+                                    <p class="text-gray-600">Understand how I compose my shots to create visually stunning and emotionally powerful images.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="bg-blue-100 p-3 rounded-full mr-4 flex-shrink-0">
+                                    <i class="bi bi-tree text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-800">Conservation Focus</h4>
+                                    <p class="text-gray-600">See how my photography supports environmental awareness and conservation efforts.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="video-container">
+                        <iframe src="https://www.youtube.com/embed/BkD2nN5275c" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section class="py-20 px-4 bg-white">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16">
+                    <span class="inline-block px-3 py-1 text-sm font-medium text-emerald-600 bg-emerald-100 rounded-full mb-4">Pricing</span>
+                    <h2 class="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-4">Print Options</h2>
+                    <p class="max-w-2xl mx-auto text-gray-600">High-quality prints available in various sizes and formats. All prints come with a certificate of authenticity.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="price-card p-8 text-center">
+                        <h3 class="font-bold text-xl text-gray-800 mb-2">Standard Prints</h3>
+                        <p class="text-gray-600 mb-6">Perfect for home decoration</p>
+                        <div class="text-4xl font-bold text-emerald-600 mb-6">₹5,900+</div>
+                        <ul class="space-y-3 mb-8">
+                            <li class="price-feature">Archival quality paper</li>
+                            <li class="price-feature">Available in 3 sizes</li>
+                            <li class="price-feature">Matte or glossy finish</li>
+                            <li class="price-feature">Standard framing options</li>
+                        </ul>
+                        <button class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg font-medium transition duration-300">
+                            View Options
+                        </button>
+                    </div>
+                    <div class="price-card p-8 text-center popular">
+                        <div class="popular-badge">Most Popular</div>
+                        <h3 class="font-bold text-xl text-gray-800 mb-2">Premium Prints</h3>
+                        <p class="text-gray-600 mb-6">Gallery-quality limited editions</p>
+                        <div class="text-4xl font-bold text-emerald-600 mb-6">₹12,900+</div>
+                        <ul class="space-y-3 mb-8">
+                            <li class="price-feature">Museum-quality paper</li>
+                            <li class="price-feature">Limited to 50 prints per image</li>
+                            <li class="price-feature">Hand-signed by artist</li>
+                            <li class="price-feature">Premium framing options</li>
+                            <li class="price-feature">Certificate of authenticity</li>
+                        </ul>
+                        <button class="w-full btn-primary text-white py-2 rounded-lg font-medium transition duration-300">
+                            View Options
+                        </button>
+                    </div>
+                    <div class="price-card p-8 text-center">
+                        <h3 class="font-bold text-xl text-gray-800 mb-2">Custom Projects</h3>
+                        <p class="text-gray-600 mb-6">Tailored to your specific needs</p>
+                        <div class="text-4xl font-bold text-emerald-600 mb-6">Custom Quote</div>
+                        <ul class="space-y-3 mb-8">
+                            <li class="price-feature">Large format prints</li>
+                            <li class="price-feature">Corporate installations</li>
+                            <li class="price-feature">Custom framing solutions</li>
+                            <li class="price-feature">Licensing for commercial use</li>
+                            <li class="price-feature">Personalized consultation</li>
+                        </ul>
+                        <button @click="scrollToContact" class="w-full bg-white text-emerald-600 border border-emerald-600 py-2 rounded-lg font-medium hover:bg-emerald-50 transition duration-300">
+                            Contact Me
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="py-20 px-4 bg-gray-50">
+            <div class="max-w-7xl mx-auto">
+                <div class="grid md:grid-cols-2 gap-16 items-center">
+                    <div class="relative">
+                        <div class="relative w-full h-96 rounded-2xl overflow-hidden shadow-xl">
+                            <img src="https://images.unsplash.com/photo-1552168324-d612d77725e3" alt="Ayushi photographing nature" class="w-full h-full object-cover">
+                            <div class="watermark">© Click.it Ayushi</div>
+                        </div>
+                        <div class="absolute -bottom-8 -right-8 w-64 h-64 rounded-2xl overflow-hidden shadow-lg border-4 border-white">
+                            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb" alt="Mountain lake" class="w-full h-full object-cover">
+                            <div class="watermark">© Click.it Ayushi</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="inline-block px-3 py-1 text-sm font-medium text-emerald-600 bg-emerald-100 rounded-full mb-4">About Me</span>
+                        <h2 class="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-6">My Journey With Nature</h2>
+                        <p class="text-gray-600 mb-4">
+                            Since childhood, I've been fascinated by the natural world. What began as simple hikes with a point-and-shoot camera has evolved into Click.it Ayushi - my premium photography brand dedicated to capturing Earth's most breathtaking landscapes and wildlife moments.
+                        </p>
+                        <p class="text-gray-600 mb-6">
+                            My work has taken me from the Himalayan peaks to the Western Ghats rainforests, always seeking to reveal nature's hidden beauty through my lens. I believe photography can inspire conservation and deepen our connection to the natural world.
+                        </p>
+                        
+                        <!-- Skills -->
+                        <div class="mb-8">
+                            <h4 class="font-medium text-gray-800 mb-4">My Skills</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Landscape Photography</span>
+                                        <span class="text-sm font-medium text-gray-500">95%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-emerald-600 h-2 rounded-full" style="width: 95%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Wildlife Photography</span>
+                                        <span class="text-sm font-medium text-gray-500">85%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-emerald-600 h-2 rounded-full" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Post-Processing</span>
+                                        <span class="text-sm font-medium text-gray-500">90%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-emerald-600 h-2 rounded-full" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm font-medium text-gray-700">Teaching & Workshops</span>
+                                        <span class="text-sm font-medium text-gray-500">88%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-emerald-600 h-2 rounded-full" style="width: 88%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button class="btn-primary text-white px-6 py-3 rounded-lg font-medium">
+                                View Full Portfolio
+                            </button>
+                            <button @click="scrollToContact" class="bg-white text-gray-800 border border-gray-300 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition duration-300">
+                                Commission Work
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonial Section -->
+        <section class="py-20 px-4 bg-white">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16">
+                    <span class="inline-block px-3 py-1 text-sm font-medium text-emerald-600 bg-emerald-100 rounded-full mb-4">Testimonials</span>
+                    <h2 class="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-4">What Clients Say</h2>
+                    <p class="max-w-2xl mx-auto text-gray-600">Don't just take our word for it. Here's what our clients have to say about their experience.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div v-for="testimonial in testimonials" :key="testimonial.id" class="testimonial-card p-8 text-center relative">
+                        <div class="testimonial-avatar">
+                            <img :src="testimonial.avatar" :alt="testimonial.name" class="w-full h-full object-cover">
+                        </div>
+                        <div class="mt-8">
+                            <div class="flex justify-center text-amber-400 mb-2">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                            <p class="text-gray-600 mb-6 italic">
+                                "{{ testimonial.text }}"
+                            </p>
+                            <h4 class="font-medium text-gray-800">{{ testimonial.name }}</h4>
+                            <p class="text-sm text-gray-600">{{ testimonial.role }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Blog Section -->
+        <section id="blog" class="py-20 px-4 bg-gray-50">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16">
+                    <span class="inline-block px-3 py-1 text-sm font-medium text-emerald-600 bg-emerald-100 rounded-full mb-4">Blog</span>
+                    <h2 class="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-4">Latest Articles</h2>
+                    <p class="max-w-2xl mx-auto text-gray-600">Photography tips, travel stories, and behind-the-scenes insights from my adventures.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div v-for="post in blogPosts" :key="post.id" class="blog-card">
+                        <div class="h-48 overflow-hidden">
+                            <img :src="post.image" :alt="post.title" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center text-sm text-gray-500 mb-3">
+                                <span>{{ post.date }}</span>
+                                <span class="mx-2">•</span>
+                                <span>{{ post.readTime }} read</span>
+                            </div>
+                            <h3 class="font-bold text-xl text-gray-800 mb-3">{{ post.title }}</h3>
+                            <p class="text-gray-600 mb-4">{{ post.excerpt }}</p>
+                            <a href="#" class="text-emerald-600 hover:text-emerald-700 font-medium flex items-center">
+                                Read More <i class="bi bi-arrow-right ml-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-12 text-center">
+                    <button class="bg-white text-emerald-600 border border-emerald-600 px-8 py-3 rounded-lg font-medium hover:bg-emerald-50 transition duration-300">
+                        View All Articles
+                        <i class="bi bi-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="py-20 px-4 bg-white">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-16">
+                    <span class="inline-block px-3 py-1 text-sm font-medium text-emerald-600 bg-emerald-100 rounded-full mb-4">FAQs</span>
+                    <h2 class="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-4">Frequently Asked Questions</h2>
+                    <p class="max-w-2xl mx-auto text-gray-600">Have questions? We've got answers. If you can't find what you're looking for, feel free to contact us.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div v-for="(faq, index) in faqs" :key="faq.id" class="accordion-item" :class="{'active': activeFaq === index}">
+                        <div class="accordion-header" @click="toggleFaq(index)">
+                            <h3 class="font-medium text-lg text-gray-800">{{ faq.question }}</h3>
+                            <i class="bi bi-chevron-down accordion-icon text-gray-500"></i>
+                        </div>
+                        <div class="accordion-content">
+                            <p class="text-gray-600 pb-4">{{ faq.answer }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Instagram Feed -->
+        <section class="py-20 px-4 bg-gray-50">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16">
+                    <span class="inline-block px-3 py-1 text-sm font-medium text-emerald-600 bg-emerald-100 rounded-full mb-4">Social Media</span>
+                    <h2 class="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-4">Follow on Instagram</h2>
+                    <p class="max-w-2xl mx-auto text-gray-600">Daily nature photography inspiration and behind-the-scenes moments.</p>
+                </div>
+
+                <div class="instagram-feed">
+                    <a v-for="post in instagramPosts" :key="post.id" :href="post.link" target="_blank" class="instagram-item">
+                        <img :src="post.image" :alt="post.caption" class="w-full h-full object-cover">
+                        <div class="instagram-icon">
+                            <i class="bi bi-instagram"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="mt-12 text-center">
+                    <a href="https://www.instagram.com/click_it.03?igsh=cnJiN2drYTFvOGhp" target="_blank" class="btn-secondary text-white px-8 py-3 rounded-lg font-medium inline-flex items-center">
+                        <i class="bi bi-instagram mr-2"></i> Follow @clickitayushi
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="py-20 px-4 bg-white">
+            <div class="max-w-7xl mx-auto">
+                <div class="grid md:grid-cols-2 gap-16 items-center">
+                    <div>
+                        <span class="inline-block px-3 py-1 text-sm font-medium text-emerald-600 bg-emerald-100 rounded-full mb-4">Contact</span>
+                        <h2 class="font-playfair text-3xl md:text-4xl font-bold text-gray-800 mb-6">Let's Connect</h2>
+                        <p class="text-gray-600 mb-8 max-w-lg">
+                            Interested in prints, workshops, or collaborations? Reach out below. For workshop bookings, please include your preferred dates and experience level.
+                        </p>
+                        <div class="space-y-6">
+                            <div class="flex items-start">
+                                <div class="bg-emerald-100 p-3 rounded-full mr-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-800">Email</h4>
+                                    <p class="text-gray-600">ayushiaashi0358@gmail.com</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="bg-emerald-100 p-3 rounded-full mr-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-800">Phone</h4>
+                                    <p class="text-gray-600">+91 xxxxxxxxxx</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="bg-emerald-100 p-3 rounded-full mr-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-800">Based In</h4>
+                                    <p class="text-gray-600">Bhagalpur, Bihar , India</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-8">
+                            <h4 class="font-medium text-gray-800 mb-4">Follow My Work</h4>
+                            <div class="flex space-x-4">
+                                <a href="#" class="bg-gray-200 p-3 rounded-full text-gray-700 hover:bg-emerald-600 hover:text-white transition duration-300">
+                                    <i class="bi bi-instagram"></i>
+                                </a>
+                                <a href="#" class="bg-gray-200 p-3 rounded-full text-gray-700 hover:bg-emerald-600 hover:text-white transition duration-300">
+                                    <i class="bi bi-facebook"></i>
+                                </a>
+                                <a href="#" class="bg-gray-200 p-3 rounded-full text-gray-700 hover:bg-emerald-600 hover:text-white transition duration-300">
+                                    <i class="bi bi-twitter"></i>
+                                </a>
+                                <a href="#" class="bg-gray-200 p-3 rounded-full text-gray-700 hover:bg-emerald-600 hover:text-white transition duration-300">
+                                    <i class="bi bi-youtube"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-8 rounded-2xl shadow-lg">
+                        <form @submit.prevent="submitForm" class="space-y-6">
+                            <div>
+                                <label class="block font-medium text-gray-700 mb-2">Name</label>
+                                <input type="text" v-model="formData.name" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-gray-700 mb-2">Email</label>
+                                <input type="email" v-model="formData.email" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-gray-700 mb-2">Subject</label>
+                                <select v-model="formData.subject" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                    <option value="">Select a subject</option>
+                                    <option value="workshop">Workshop Inquiry</option>
+                                    <option value="print">Print Purchase</option>
+                                    <option value="collab">Collaboration</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-medium text-gray-700 mb-2">Message</label>
+                                <textarea v-model="formData.message" rows="5" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"></textarea>
+                            </div>
+                            <button type="submit" class="w-full btn-primary text-white px-6 py-4 rounded-lg font-medium text-lg">
+                                Send Message
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Newsletter Section -->
+        <section class="py-16 bg-emerald-600 text-white">
+            <div class="max-w-4xl mx-auto px-4 text-center">
+                <h2 class="font-playfair text-3xl md:text-4xl font-bold mb-4">Join My Newsletter</h2>
+                <p class="text-lg mb-8 max-w-2xl mx-auto">Subscribe to receive updates on new work, upcoming workshops, and exclusive photography tips.</p>
+                <form class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <input type="email" placeholder="Your email address" class="px-6 py-3 rounded-lg w-full sm:w-96 focus:outline-none text-gray-800">
+                    <button type="submit" class="btn-secondary text-white px-8 py-3 rounded-lg font-medium">
+                        Subscribe
+                    </button>
+                </form>
+                <p class="text-sm mt-4 opacity-80">We respect your privacy. Unsubscribe at any time.</p>
+            </div>
+        </section>
+
+        <!-- Lightbox -->
+        <div class="lightbox" :class="{'active': lightboxActive}" @click.self="closeLightbox">
+            <div class="lightbox-content">
+                <button class="lightbox-close" @click="closeLightbox">
+                    <i class="bi bi-x"></i>
+                </button>
+                <button class="lightbox-nav lightbox-prev" @click.stop="prevPhoto">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <img :src="photos[lightboxIndex].url" :alt="photos[lightboxIndex].title">
+                <button class="lightbox-nav lightbox-next" @click.stop="nextPhoto">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                <div class="lightbox-info">
+                    <h3 class="font-playfair text-xl font-bold">{{ photos[lightboxIndex].title }}</h3>
+                    <p class="text-sm opacity-90">{{ photos[lightboxIndex].location }}</p>
+                    <div class="mt-2 flex items-center justify-between">
+                        <div>
+                            <span class="inline-block px-2 py-1 text-xs font-medium bg-white/20 rounded-full">{{ photos[lightboxIndex].category }}</span>
+                            <span class="ml-2 text-xs opacity-80">{{ photos[lightboxIndex].date }}</span>
+                        </div>
+                        <button @click.stop="addToCart(photos[lightboxIndex])" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition duration-300">
+                            <i class="bi bi-cart-plus mr-1"></i> Add to Cart (₹{{ photos[lightboxIndex].price.toLocaleString() }})
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Top Button -->
+        <button class="back-to-top" :class="{'visible': showBackToTop}" @click="scrollToTop">
+            <i class="bi bi-arrow-up"></i>
+        </button>
+
+        <!-- Footer -->
+        <footer class="bg-gray-900 text-white pt-16 pb-8">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="grid md:grid-cols-4 gap-12">
+                    <div>
+                        <div class="font-playfair text-2xl font-bold mb-6 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            <span>Click.it Ayushi</span>
+                        </div>
+                        <p class="text-gray-400 mb-6">
+                            Premium nature photography capturing the world's most stunning landscapes and wildlife moments.
+                        </p>
+                        <div class="flex space-x-4">
+                            <a href="https://www.instagram.com/ayushi_ydv_09?igsh=MWMwdGc1OXhodGlhbg==" class="text-gray-400 hover:text-white transition duration-300">
+                                <i class="bi bi-instagram text-xl"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                                <i class="bi bi-facebook text-xl"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                                <i class="bi bi-twitter text-xl"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                                <i class="bi bi-youtube text-xl"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-lg mb-6">Quick Links</h4>
+                        <ul class="space-y-3">
+                            <li><a href="#home" class="text-gray-400 hover:text-white transition duration-300">Home</a></li>
+                            <li><a href="#gallery" class="text-gray-400 hover:text-white transition duration-300">Gallery</a></li>
+                            <li><a href="#workshops" class="text-gray-400 hover:text-white transition duration-300">Workshops</a></li>
+                            <li><a href="#about" class="text-gray-400 hover:text-white transition duration-300">About</a></li>
+                            <li><a href="#blog" class="text-gray-400 hover:text-white transition duration-300">Blog</a></li>
+                            <li><a href="#contact" class="text-gray-400 hover:text-white transition duration-300">Contact</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-lg mb-6">Workshops</h4>
+                        <ul class="space-y-3">
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-300">Himalayan Landscape</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-300">Wildlife Photography</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-300">Forest Photography</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-300">Private Mentorship</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-300">Online Courses</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-lg mb-6">Newsletter</h4>
+                        <p class="text-gray-400 mb-4">Subscribe to receive updates on new work and upcoming workshops.</p>
+                        <form class="flex">
+                            <input type="email" placeholder="Your email" class="px-4 py-3 rounded-l-lg w-full focus:outline-none text-gray-800">
+                            <button type="submit" class="bg-emerald-600 text-white px-4 py-3 rounded-r-lg hover:bg-emerald-700 transition duration-300">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+                    <p class="text-gray-400 mb-4 md:mb-0">&copy; 2025 Click.it Ayushi. All rights reserved.</p>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-gray-400 hover:text-white transition duration-300">Privacy Policy</a>
+                        <a href="#" class="text-gray-400 hover:text-white transition duration-300">Terms of Service</a>
+                        <a href="#" class="text-gray-400 hover:text-white transition duration-300">Shipping Policy</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    mobileMenuOpen: false,
+                    loading: false,
+                    activeSection: 'home',
+                    categories: ['All', 'Landscapes', 'Wildlife', 'Forests', 'Mountains', 'Water', 'Sunrise/Sunset', 'Aerial'],
+                    selectedCategory: 'All',
+                    photos: [
+                        { id: 1, url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05', title: 'Himalayan Sunrise', category: 'Mountains', location: 'Himalayas, India', date: 'June 2022', price: 12500 },
+                        { id: 2, url: 'https://images.unsplash.com/photo-1501854140801-50d01698950b', title: 'Forest Path', category: 'Forests', location: 'Western Ghats', date: 'March 2023', price: 9800 },
+                        { id: 3, url: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d', title: 'Misty Waterfall', category: 'Water', location: 'Meghalaya', date: 'August 2021', price: 11200 },
+                        { id: 4, url: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e', title: 'Rocky Coastline', category: 'Landscapes', location: 'Goa', date: 'January 2023', price: 8900 },
+                        { id: 5, url: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716', title: 'Autumn Colors', category: 'Forests', location: 'Himachal Pradesh', date: 'November 2022', price: 10500 },
+                        { id: 6, url: 'https://images.unsplash.com/photo-1476231682828-37e571bc172f', title: 'Lone Tree', category: 'Landscapes', location: 'Rajasthan', date: 'February 2023', price: 7500 },
+                        { id: 7, url: 'https://images.unsplash.com/photo-1414609245224-afa02bfb3fda', title: 'Snow Leopard', category: 'Wildlife', location: 'Ladakh', date: 'December 2022', price: 18900 },
+                        { id: 8, url: 'https://images.unsplash.com/photo-1429087969512-1e85aab2683d', title: 'River Valley', category: 'Landscapes', location: 'Uttarakhand', date: 'May 2023', price: 9200 },
+                        { id: 9, url: 'https://images.unsplash.com/photo-1470114716159-e389f8712fda', title: 'Elephant Herd', category: 'Wildlife', location: 'Kaziranga', date: 'April 2023', price: 15600 },
+                        { id: 10, url: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07', title: 'Mountain Lake', category: 'Mountains', location: 'Sikkim', date: 'July 2023', price: 11500 },
+                        { id: 11, url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb', title: 'Golden Forest', category: 'Forests', location: 'Himachal Pradesh', date: 'October 2022', price: 10800 },
+                        { id: 12, url: 'https://images.unsplash.com/photo-1426604966848-d7adac402bff', title: 'Misty Valley', category: 'Landscapes', location: 'Himachal Pradesh', date: 'September 2022', price: 9800 }
+                    ],
+                    workshops: [
+                        { id: 1, title: 'Himalayan Landscape Masterclass', description: '5-day intensive workshop in the Himalayas covering landscape photography techniques.', location: 'Himachal Pradesh', date: 'Oct 15-20, 2023', duration: '5 Days', price: 24999, seats: 8, groupSize: 'Small (6-8)', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b' },
+                        { id: 2, title: 'Wildlife Photography Expedition', description: '7-day safari and photography workshop in Kaziranga National Park.', location: 'Assam', date: 'Nov 5-12, 2023', duration: '7 Days', price: 34999, seats: 6, groupSize: 'Small (4-6)', image: 'https://images.unsplash.com/photo-1452570053594-1b985d6ea890' },
+                        { id: 3, title: 'Forest Photography Weekend', description: 'Weekend workshop focusing on capturing the magic of forests and woodlands.', location: 'Western Ghats', date: 'Dec 2-4, 2023', duration: '3 Days', price: 17999, seats: 10, groupSize: 'Medium (8-12)', image: 'https://images.unsplash.com/photo-1448375240586-882707db888b' },
+                        { id: 4, title: 'Aerial Photography with Drones', description: '2-day workshop covering drone photography techniques and regulations.', location: 'Rajasthan', date: 'Jan 13-14, 2024', duration: '2 Days', price: 15999, seats: 12, groupSize: 'Medium (10-12)', image: 'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00' },
+                        { id: 5, title: 'Sunrise & Sunset Mastery', description: 'Learn to capture the golden hours in this intensive 3-day workshop.', location: 'Goa', date: 'Feb 9-11, 2024', duration: '3 Days', price: 19999, seats: 8, groupSize: 'Small (6-8)', image: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35' },
+                        { id: 6, title: 'Advanced Post-Processing', description: 'Take your editing skills to the next level with Lightroom and Photoshop.', location: 'Online', date: 'Mar 5-7, 2024', duration: '3 Days', price: 12999, seats: 15, groupSize: 'Large (15)', image: 'https://images.unsplash.com/photo-1555099962-4199c345e5dd' }
+                    ],
+                    testimonials: [
+                        { id: 1, name: 'Priya Mehta', role: 'Wildlife Photographer', text: "Ayushi's photography workshop transformed how I see and capture nature. Her technical expertise combined with deep ecological knowledge creates a unique learning experience. The images I've taken since have been published in two travel magazines!", avatar: 'https://randomuser.me/api/portraits/women/43.jpg' },
+                        { id: 2, name: 'Rahul Sharma', role: 'Travel Blogger', text: "Purchasing prints from Click.it Ayushi was the best decision for my travel agency. The quality is exceptional and Ayushi's eye for detail brings each location to life in ways I couldn't imagine.", avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
+                        { id: 3, name: 'Ananya Patel', role: 'Art Director', text: "Working with Ayushi on our conservation campaign was a pleasure. Her ability to capture the essence of nature while telling a compelling story through images is unparalleled in the industry.", avatar: 'https://randomuser.me/api/portraits/women/65.jpg' }
+                    ],
+                    blogPosts: [
+                        { id: 1, title: 'Capturing the Perfect Sunrise: Tips and Techniques', excerpt: 'Learn how to plan and execute stunning sunrise photography with these professional tips.', date: 'May 15, 2023', readTime: '5 min', image: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35' },
+                        { id: 2, title: 'My Himalayan Expedition: A Photographer\'s Diary', excerpt: 'Follow my 14-day journey through the Himalayas capturing its majestic beauty.', date: 'April 2, 2023', readTime: '8 min', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b' },
+                        { id: 3, title: 'Essential Gear for Wildlife Photography', excerpt: 'The must-have equipment for capturing stunning wildlife images in the field.', date: 'March 18, 2023', readTime: '6 min', image: 'https://images.unsplash.com/photo-1452570053594-1b985d6ea890' }
+                    ],
+                    faqs: [
+                        { id: 1, question: 'How do I purchase prints?', answer: 'You can purchase prints directly from the gallery section. Select your favorite image, choose the size and finish, and proceed to checkout. We offer worldwide shipping.' },
+                        { id: 2, question: 'What is your cancellation policy for workshops?', answer: 'Workshop cancellations made 30+ days before the start date receive a full refund. 15-29 days before receives a 50% refund. Less than 15 days is non-refundable but transferable.' },
+                        { id: 3, question: 'Do you offer private photography lessons?', answer: 'Yes, I offer one-on-one mentoring sessions both in-person and online. These can be tailored to your specific interests and skill level.' },
+                        { id: 4, question: 'How long does shipping take?', answer: 'Standard prints ship within 3-5 business days and delivery takes 7-10 business days within India. International shipping takes 10-15 business days. Premium prints may take additional time for signing and certification.' },
+                        { id: 5, question: 'Can I license your photos for commercial use?', answer: 'Yes, commercial licensing is available. Please contact me with details about your project and I can provide pricing and terms.' }
+                    ],
+                    instagramPosts: [
+                        { id: 1, image: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05', caption: 'Sunrise in the Himalayas #naturephotography', link: '#' },
+                        { id: 2, image: 'https://images.unsplash.com/photo-1501854140801-50d01698950b', caption: 'Forest path in Western Ghats #forestphotography', link: '#' },
+                        { id: 3, image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d', caption: 'Waterfall magic #longexposure', link: '#' },
+                        { id: 4, image: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e', caption: 'Coastal beauty #landscapephotography', link: '#' },
+                        { id: 5, image: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716', caption: 'Autumn colors #fallphotography', link: '#' },
+                        { id: 6, image: 'https://images.unsplash.com/photo-1476231682828-37e571bc172f', caption: 'Lone tree in the desert #minimalism', link: '#' }
+                    ],
+                    currentTestimonial: 0,
+                    showAllWorkshops: false,
+                    lightboxActive: false,
+                    lightboxIndex: 0,
+                    cartCount: 0,
+                    cartItems: [],
+                    cartPreviewOpen: false,
+                    showBackToTop: false,
+                    activeFaq: null,
+                    formData: {
+                        name: '',
+                        email: '',
+                        subject: '',
+                        message: ''
+                    }
+                }
+            },
+            computed: {
+                filteredPhotos() {
+                    if (this.selectedCategory === 'All') {
+                        return this.photos;
+                    }
+                    return this.photos.filter(photo => photo.category === this.selectedCategory);
+                },
+                displayedWorkshops() {
+                    return this.showAllWorkshops ? this.workshops : this.workshops.slice(0, 3);
+                },
+                cartTotal() {
+                    return this.cartItems.reduce((total, item) => total + item.price, 0);
+                }
+            },
+            methods: {
+                toggleMobileMenu() {
+                    this.mobileMenuOpen = !this.mobileMenuOpen;
+                },
+                filterCategory(category) {
+                    this.loading = true;
+                    this.selectedCategory = category;
+                    setTimeout(() => {
+                        this.loading = false;
+                    }, 500);
+                },
+                scrollToGallery() {
+                    this.activeSection = 'gallery';
+                    gsap.to(window, {duration: 1, scrollTo: "#gallery", ease: "power2.inOut"});
+                },
+                scrollToWorkshops() {
+                    this.activeSection = 'workshops';
+                    gsap.to(window, {duration: 1, scrollTo: "#workshops", ease: "power2.inOut"});
+                },
+                scrollToContact() {
+                    this.activeSection = 'contact';
+                    gsap.to(window, {duration: 1, scrollTo: "#contact", ease: "power2.inOut"});
+                },
+                scrollToTop() {
+                    gsap.to(window, {duration: 0.8, scrollTo: 0, ease: "power2.inOut"});
+                },
+                handleScroll() {
+                    // Check scroll position for back to top button
+                    this.showBackToTop = window.scrollY > 300;
+                    
+                    // Update active section based on scroll position
+                    const sections = ['home', 'gallery', 'workshops', 'about', 'blog', 'contact'];
+                    for (const section of sections) {
+                        const element = document.getElementById(section);
+                        if (element) {
+                            const rect = element.getBoundingClientRect();
+                            if (rect.top <= 100 && rect.bottom >= 100) {
+                                this.activeSection = section;
+                                break;
+                            }
+                        }
+                    }
+                },
+                async submitForm() {
+                    this.loading = true;
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    alert('Thank you for your message, ' + this.formData.name + '! I will get back to you soon.');
+                    this.formData = {
+                        name: '',
+                        email: '',
+                        subject: '',
+                        message: ''
+                    };
+                    this.loading = false;
+                },
+                openLightbox(index) {
+                    this.lightboxIndex = index;
+                    this.lightboxActive = true;
+                    document.body.style.overflow = 'hidden';
+                },
+                closeLightbox() {
+                    this.lightboxActive = false;
+                    document.body.style.overflow = 'auto';
+                },
+                nextPhoto() {
+                    this.lightboxIndex = (this.lightboxIndex + 1) % this.photos.length;
+                },
+                prevPhoto() {
+                    this.lightboxIndex = (this.lightboxIndex - 1 + this.photos.length) % this.photos.length;
+                },
+                addToCart(photo) {
+                    this.cartItems.push({
+                        id: 'photo-' + photo.id,
+                        title: photo.title,
+                        price: photo.price,
+                        image: photo.url
+                    });
+                    this.cartCount = this.cartItems.length;
+                    this.$notify({
+                        title: 'Added to Cart',
+                        text: `"${photo.title}" added to your cart`,
+                        type: 'success'
+                    });
+                },
+                addWorkshopToCart(workshop) {
+                    this.cartItems.push({
+                        id: 'workshop-' + workshop.id,
+                        title: workshop.title,
+                        price: workshop.price,
+                        image: workshop.image
+                    });
+                    this.cartCount = this.cartItems.length;
+                    this.$notify({
+                        title: 'Added to Cart',
+                        text: `"${workshop.title}" workshop added to your cart`,
+                        type: 'success'
+                    });
+                },
+                removeFromCart(id) {
+                    this.cartItems = this.cartItems.filter(item => item.id !== id);
+                    this.cartCount = this.cartItems.length;
+                },
+                toggleCartPreview() {
+                    this.cartPreviewOpen = !this.cartPreviewOpen;
+                },
+                loadMorePhotos() {
+                    this.loading = true;
+                    // Simulate loading more photos
+                    setTimeout(() => {
+                        const newPhotos = [
+                            { id: 13, url: 'https://images.unsplash.com/photo-1511497584788-876760111969', title: 'Desert Dunes', category: 'Landscapes', location: 'Rajasthan', date: 'March 2023', price: 9500 },
+                            { id: 14, url: 'https://images.unsplash.com/photo-1506260408121-e353d10b87c7', title: 'Autumn Forest', category: 'Forests', location: 'Himachal Pradesh', date: 'November 2022', price: 10200 },
+                            { id: 15, url: 'https://images.unsplash.com/photo-1470114716159-e389f8712fda', title: 'Elephant Family', category: 'Wildlife', location: 'Kaziranga', date: 'April 2023', price: 14200 }
+                        ];
+                        this.photos = [...this.photos, ...newPhotos];
+                        this.loading = false;
+                    }, 1000);
+                },
+                animateCounters() {
+                    const yearsTarget = 7;
+                    const publishedTarget = 50;
+                    const duration = 2000;
+                    const increment = 10;
+                    
+                    const yearsCounter = this.$refs.yearsCounter;
+                    const publishedCounter = this.$refs.publishedCounter;
+                    
+                    if (yearsCounter && publishedCounter) {
+                        const yearsInterval = setInterval(() => {
+                            const current = parseInt(yearsCounter.textContent);
+                            if (current < yearsTarget) {
+                                yearsCounter.textContent = current + 1;
+                            } else {
+                                clearInterval(yearsInterval);
+                            }
+                        }, duration / yearsTarget);
+                        
+                        const publishedInterval = setInterval(() => {
+                            const current = parseInt(publishedCounter.textContent);
+                            if (current < publishedTarget) {
+                                publishedCounter.textContent = current + increment;
+                            } else {
+                                publishedCounter.textContent = publishedTarget;
+                                clearInterval(publishedInterval);
+                            }
+                        }, duration / (publishedTarget / increment));
+                    }
+                },
+                toggleFaq(index) {
+                    this.activeFaq = this.activeFaq === index ? null : index;
+                },
+                hidePreloader() {
+                    const preloader = document.getElementById('preloader');
+                    if (preloader) {
+                        // Animate preloader out
+                        gsap.to('.preloader-logo', {duration: 0.5, opacity: 1, y: 0, delay: 0.3});
+                        gsap.to('.preloader-spinner', {duration: 0.5, opacity: 1, delay: 0.6});
+                        
+                        // After animations complete, hide preloader
+                        setTimeout(() => {
+                            gsap.to(preloader, {duration: 0.8, opacity: 0, onComplete: () => {
+                                preloader.style.display = 'none';
+                            }});
+                        }, 2000);
+                    }
+                }
+            },
+            mounted() {
+                window.addEventListener('scroll', this.handleScroll);
+                
+                // Initialize animations
+                gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+                
+                // Hide preloader
+                this.hidePreloader();
+                
+                // Hero section animations
+                gsap.from(".hero-section h1", {
+                    duration: 1,
+                    y: 50,
+                    opacity: 0,
+                    ease: "power3.out"
+                });
+                
+                gsap.from(".hero-section p", {
+                    duration: 1,
+                    y: 50,
+                    opacity: 0,
+                    delay: 0.3,
+                    ease: "power3.out"
+                });
+                
+                gsap.from(".hero-section button", {
+                    duration: 1,
+                    y: 50,
+                    opacity: 0,
+                    delay: 0.6,
+                    ease: "power3.out",
+                    stagger: 0.2
+                });
+                
+                // Animate sections on scroll
+                gsap.utils.toArray("section").forEach(section => {
+                    gsap.from(section, {
+                        scrollTrigger: {
+                            trigger: section,
+                            start: "top 80%",
+                            toggleActions: "play none none none"
+                        },
+                        y: 50,
+                        opacity: 0,
+                        duration: 0.8
+                    });
+                });
+                
+                // Animate feature cards
+                gsap.utils.toArray(".feature-card").forEach((card, i) => {
+                    gsap.from(card, {
+                        scrollTrigger: {
+                            trigger: card,
+                            start: "top 80%",
+                            toggleActions: "play none none none"
+                        },
+                        y: 50,
+                        opacity: 0,
+                        duration: 0.8,
+                        delay: i * 0.1
+                    });
+                });
+                
+                // Animate counters
+                this.animateCounters();
+            },
+            beforeUnmount() {
+                window.removeEventListener('scroll', this.handleScroll);
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
